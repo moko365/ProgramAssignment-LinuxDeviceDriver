@@ -35,6 +35,12 @@ ssize_t cdata_read(struct file *filp, char *buf, size_t size, loff_t *off)
 ssize_t cdata_write(struct file *filp, const char *buf, size_t size, 
 			loff_t *off)
 {
+	unsigned int i;
+
+	printk(KERN_INFO "CDATA: in write\n");
+	for (i = 0; i < 50000000; i++) {
+	}
+
 	return 0;
 }
 

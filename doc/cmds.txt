@@ -1,0 +1,1 @@
+set bootargs root=/dev/ram0 rw console=ttyS0,115200 mem=64M ramdisk=16384; bootm 30f00000 32000000
