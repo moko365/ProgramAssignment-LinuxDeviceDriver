@@ -16,7 +16,7 @@
 #include <asm/uaccess.h>
 #include "cdata_ioctl.h"
 
-#define	BUF_SIZE	(128)
+#define	BUF_SIZE	(12800)
 #define	LCD_SIZE	(320*240*4)
 
 struct cdata_t {
@@ -60,6 +60,7 @@ void flush_lcd(void *priv)
 	int index;
 	int offset;
 	int i;
+	int j;
 
 	fb = (unsigned char *)cdata->fb;
 	pixel = cdata->buf;
@@ -71,6 +72,8 @@ void flush_lcd(void *priv)
 	    offset++;
 	    if (offset >= LCD_SIZE)
 		offset = 0;
+	    // Lab
+	    for (j = 0; j < 100000; j++);
 	}
 	
 	cdata->index = 0;
