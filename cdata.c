@@ -57,7 +57,7 @@ void flush_lcd(void *priv)
 	int index;
 	int i;
 
-	fb = cdata->fb;
+	fb = (unsigned char *)cdata->fb;
 	pixel = cdata->buf;
 	index = cdata->index;
 
@@ -87,7 +87,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 	    index++;
 	}
 
-    	cdata->index;
+    	cdata->index = index;
 
 	return 0;
 }
@@ -121,7 +121,7 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 		fb = cdata->fb;
 		// FIXME: unlock
 		for (i = 0; i < n; i++)
-		    writel(0x00ff0000, fb++);
+		    writel(0x00ff00ff, fb++);
 
 	        break;
 	}
