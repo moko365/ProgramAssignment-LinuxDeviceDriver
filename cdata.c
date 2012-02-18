@@ -33,6 +33,7 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
 	cdata= kmalloc(sizeof(struct cdata_t), GFP_KERNEL);
 	cdata->fb = ioremap(0x33f00000, 320*240*4);
+	filp->private_data = (void *)cdata;
 
 	return 0;
 }
@@ -60,6 +61,7 @@ static int cdata_close(struct inode *inode, struct file *filp)
 static int cdata_ioctl(struct inode *inode, struct file *filp, 
 		unsigned int cmd, unsigned long arg)
 {
+	struct cdata_t *cdata = (struct cdata *)filp->private_data;
 	int n;
 	unsigned long *fb;
 	int i;
@@ -69,8 +71,9 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 	        n = *((int *)arg); // FIXME: dirty
 		printk(KERN_INFO "CDATA_CLEAR: %d pixel\n", n);
 
-		// FIXME: dirty
-		fb = ioremap(0x33f00000, n*4);
+		// FIXME: Lock
+		fb = cdata->fb;
+		// FIXME: unlock
 		for (i = 0; i < n; i++)
 		    writel(0x00ff0000, fb++);
 
