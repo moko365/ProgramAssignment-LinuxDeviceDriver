@@ -16,8 +16,12 @@
 #include <asm/uaccess.h>
 #include "cdata_ioctl.h"
 
+#define	BUF_SIZE	(128)
+
 struct cdata_t {
     unsigned long *fb;
+    unsigned char *buf;
+    unsigned int  index;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
@@ -32,7 +36,10 @@ static int cdata_open(struct inode *inode, struct file *filp)
 	printk(KERN_INFO "CDATA: minor = %d\n", minor);
 
 	cdata= kmalloc(sizeof(struct cdata_t), GFP_KERNEL);
+	cdata->buf = kmalloc(BUF_SIZE, GFP_KERNEL);
 	cdata->fb = ioremap(0x33f00000, 320*240*4);
+	cdata->index = 0;
+
 	filp->private_data = (void *)cdata;
 
 	return 0;
@@ -45,10 +52,21 @@ static ssize_t cdata_read(struct file *filp, char *buf, size_t size, loff_t *off
 static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, 
 			loff_t *off)
 {
+	struct cdata_t *cdata = (struct cdata *)filp->private_data;
+	unsigned char *fb;
+	unsigned int index;
 	unsigned int i;
 
-	printk(KERN_INFO "CDATA: in write\n");
-	printk(KERN_INFO "buf = %s\n", buf);
+	fb = cdata->fb;
+	index = cdata->index;
+
+	for (i = 0; i < size; i++) {
+	    if (index >= BUF_SIZE) {
+	        // buffer full
+	    }
+	    // fb[index] = buf[i];
+	    copy_from_user(&fb[index], &buf[i], 1);
+	}
 
 	return 0;
 }
