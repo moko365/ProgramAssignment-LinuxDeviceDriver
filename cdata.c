@@ -49,23 +49,41 @@ static ssize_t cdata_read(struct file *filp, char *buf, size_t size, loff_t *off
 {
 }
 
-static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, 
-			loff_t *off)
+void flush_lcd(void *priv)
 {
-	struct cdata_t *cdata = (struct cdata *)filp->private_data;
+	struct cdata_t *cdata = (struct cdata *)priv;
 	unsigned char *fb;
-	unsigned int index;
-	unsigned int i;
+	unsigned char *pixel;
+	int index;
+	int i;
 
 	fb = cdata->fb;
 	index = cdata->index;
 
+	for (i = 0; i < index; i++)
+	    writeb(pixel[i], fb++);
+	
+	cdata->index = 0;
+}
+
+static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, 
+			loff_t *off)
+{
+	struct cdata_t *cdata = (struct cdata *)filp->private_data;
+	unsigned char *pixel;
+	unsigned int index;
+	unsigned int i;
+
+	pixel = cdata->buf;
+	index = cdata->index;
+
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
-	        // buffer full
+	        flush_lcd((void *)cdata);
+		index = cdata->index;
 	    }
 	    // fb[index] = buf[i];
-	    copy_from_user(&fb[index], &buf[i], 1);
+	    copy_from_user(&pixel[index], &buf[i], 1);
 	}
 
 	return 0;
