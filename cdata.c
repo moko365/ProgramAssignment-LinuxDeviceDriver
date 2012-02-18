@@ -14,6 +14,7 @@
 #include <linux/input.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
+#include "cdata_ioctl.h"
 
 static int cdata_open(struct inode *inode, struct file *filp)
 {
@@ -49,8 +50,16 @@ static int cdata_close(struct inode *inode, struct file *filp)
 }
 
 static int cdata_ioctl(struct inode *inode, struct file *filp, 
-			unsigned int cmd, unsigned long arg)
+		unsigned int cmd, unsigned long arg)
 {
+	int n;
+
+	switch (cmd) {
+	    case CDATA_CLEAR:
+	        n = *((int *)arg);
+		printk(KERN_INFO "CDATA_CLEAR: %d pixel\n", n);
+	        break;
+	}
 }
 
 static struct file_operations cdata_fops = {	
