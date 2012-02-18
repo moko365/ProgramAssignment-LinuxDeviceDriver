@@ -82,15 +82,24 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 	        flush_lcd((void *)cdata);
 		index = cdata->index;
 	    }
-	    // fb[index] = buf[i];
 	    copy_from_user(&pixel[index], &buf[i], 1);
+	    index++;
 	}
+
+    	cdata->index;
 
 	return 0;
 }
 
 static int cdata_close(struct inode *inode, struct file *filp)
 {
+	struct cdata_t *cdata = (struct cdata *)filp->private_data;
+	
+	flush_lcd((void *)cdata);
+
+	kfree(cdata->buf);
+	kfree(cdata);
+
 	return 0;
 }
 
