@@ -58,6 +58,7 @@ void flush_lcd(void *priv)
 	int i;
 
 	fb = cdata->fb;
+	pixel = cdata->buf;
 	index = cdata->index;
 
 	for (i = 0; i < index; i++)
