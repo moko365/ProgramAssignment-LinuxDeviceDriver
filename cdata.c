@@ -16,15 +16,23 @@
 #include <asm/uaccess.h>
 #include "cdata_ioctl.h"
 
+struct cdata_t {
+    unsigned long *fb;
+};
+
 static int cdata_open(struct inode *inode, struct file *filp)
 {
 	int i;
 	int minor;
+	struct cdata_t *cdata;
 
 	printk(KERN_INFO "CDATA: in open\n");
 
 	minor = MINOR(inode->i_rdev);
 	printk(KERN_INFO "CDATA: minor = %d\n", minor);
+
+	cdata= kmalloc(sizeof(struct cdata_t), GFP_KERNEL);
+	cdata->fb = ioremap(0x33f00000, 320*240*4);
 
 	return 0;
 }
@@ -53,11 +61,19 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 		unsigned int cmd, unsigned long arg)
 {
 	int n;
+	unsigned long *fb;
+	int i;
 
 	switch (cmd) {
 	    case CDATA_CLEAR:
-	        n = *((int *)arg); // FIXME:
+	        n = *((int *)arg); // FIXME: dirty
 		printk(KERN_INFO "CDATA_CLEAR: %d pixel\n", n);
+
+		// FIXME: dirty
+		fb = ioremap(0x33f00000, n*4);
+		for (i = 0; i < n; i++)
+		    writel(0x00ff0000, fb++);
+
 	        break;
 	}
 }
