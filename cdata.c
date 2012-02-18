@@ -56,7 +56,7 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 
 	switch (cmd) {
 	    case CDATA_CLEAR:
-	        n = *((int *)arg);
+	        n = *((int *)arg); // FIXME:
 		printk(KERN_INFO "CDATA_CLEAR: %d pixel\n", n);
 	        break;
 	}
