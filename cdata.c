@@ -38,8 +38,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 	unsigned int i;
 
 	printk(KERN_INFO "CDATA: in write\n");
-	for (i = 0; i < 50000000; i++) {
-	}
+	printk(KERN_INFO "buf = %s\n", buf);
 
 	return 0;
 }
@@ -66,10 +65,18 @@ static struct file_operations cdata_fops = {
 
 int cdata_init_module(void)
 {
+	unsigned long *fb;
+	int i;
+
+	fb = ioremap(0x33f00000, 320*240*4);
+	for (i = 0; i < 320*240; i++)
+		writel(0x00ff0000, fb++);
+	
 	if (register_chrdev(121, "cdata", &cdata_fops) < 0) {
 	    printk(KERN_INFO "CDATA: can't register driver\n");
 	    return -1;
 	}
+	printk(KERN_INFO "CDATA: cdata_init_module\n");
 	return 0;
 }
 
