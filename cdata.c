@@ -185,7 +185,7 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 
 	switch (cmd) {
 	    case CDATA_CLEAR:
-	        n = *((int *)arg); // FIXME: dirty
+		get_user(n, arg);
 		printk(KERN_INFO "CDATA_CLEAR: %d pixel\n", n);
 
 		// FIXME: Lock
@@ -194,10 +194,10 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 		for (i = 0; i < n; i++)
 		    writel(0x00ff00ff, fb++);
 
-	        break;
+		return 0;
 	}
 
-	return 0;
+	return -ENOTTY;
 }
 
 static struct file_operations cdata_fops = {	
