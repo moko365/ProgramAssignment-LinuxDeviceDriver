@@ -106,11 +106,15 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 	    if (index >= BUF_SIZE) {
 		
 		cdata->index = index;
-		timer->expires = jiffies + 1*HZ;
+		timer->expires = jiffies + 5*HZ;
 		timer->function = flush_lcd;
 		timer->data = (unsigned long)cdata;
 
+		add_timer(timer);
+
  		// FIXME: Process scheduling
+ 		current->state = TASK_INTERRUPTIBLE;
+		schedule();
  		
 		index = cdata->index;
 	    }
@@ -128,6 +132,8 @@ static int cdata_close(struct inode *inode, struct file *filp)
 	struct cdata_t *cdata = (struct cdata *)filp->private_data;
 	
 	flush_lcd((void *)cdata);
+
+	del_timer(&cdata->flush_timer);
 
 	kfree(cdata->buf);
 	kfree(cdata);
