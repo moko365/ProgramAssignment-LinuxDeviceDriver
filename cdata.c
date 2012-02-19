@@ -30,7 +30,6 @@ struct cdata_t {
 
 static int cdata_open(struct inode *inode, struct file *filp)
 {
-	int i;
 	int minor;
 	struct cdata_t *cdata;
 
@@ -54,6 +53,7 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
 static ssize_t cdata_read(struct file *filp, char *buf, size_t size, loff_t *off)
 {
+	return 0;
 }
 
 void flush_lcd(unsigned long priv)
@@ -84,7 +84,7 @@ void flush_lcd(unsigned long priv)
 	cdata->offset = offset;
 }
 
-void cdata_wake_up()
+void cdata_wake_up(unsigned long priv)
 {
  	// FIXME: Wake up process
 }
@@ -100,7 +100,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 
 	pixel = cdata->buf;
 	index = cdata->index;
-	timer = cdata->flush_timer;
+	timer = &cdata->flush_timer;
 
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
@@ -131,7 +131,7 @@ static int cdata_close(struct inode *inode, struct file *filp)
 {
 	struct cdata_t *cdata = (struct cdata *)filp->private_data;
 	
-	flush_lcd((void *)cdata);
+	flush_lcd((unsigned long)cdata);
 
 	del_timer(&cdata->flush_timer);
 
@@ -162,6 +162,8 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 
 	        break;
 	}
+
+	return 0;
 }
 
 static struct file_operations cdata_fops = {	
