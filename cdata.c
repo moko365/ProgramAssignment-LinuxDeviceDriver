@@ -24,6 +24,8 @@ struct cdata_t {
     unsigned char *buf;
     unsigned int  index;
     unsigned int  offset;
+
+    struct timer_list	flush_timer;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
@@ -43,6 +45,8 @@ static int cdata_open(struct inode *inode, struct file *filp)
 	cdata->index = 0;
 	cdata->offset = 0;
 
+	init_timer(&cdata->flush_timer);
+
 	filp->private_data = (void *)cdata;
 
 	return 0;
@@ -52,7 +56,7 @@ static ssize_t cdata_read(struct file *filp, char *buf, size_t size, loff_t *off
 {
 }
 
-void flush_lcd(void *priv)
+void flush_lcd(unsigned long priv)
 {
 	struct cdata_t *cdata = (struct cdata *)priv;
 	unsigned char *fb;
@@ -89,22 +93,26 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 			loff_t *off)
 {
 	struct cdata_t *cdata = (struct cdata *)filp->private_data;
+	struct timer_list *timer;
 	unsigned char *pixel;
 	unsigned int index;
 	unsigned int i;
 
 	pixel = cdata->buf;
 	index = cdata->index;
+	timer = cdata->flush_timer;
 
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
 		
 		cdata->index = index;
-		// FIXME: Kernel scheduling
-	        flush_lcd((void *)cdata);
-		index = cdata->index;
+		timer->expires = jiffies + 1*HZ;
+		timer->function = flush_lcd;
+		timer->data = (unsigned long)cdata;
 
  		// FIXME: Process scheduling
+ 		
+		index = cdata->index;
 	    }
 	    copy_from_user(&pixel[index], &buf[i], 1);
 	    index++;
