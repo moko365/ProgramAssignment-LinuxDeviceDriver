@@ -26,6 +26,7 @@ struct cdata_t {
     unsigned int  offset;
 
     struct timer_list	flush_timer;
+    struct timer_list	sched_timer;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
@@ -45,6 +46,7 @@ static int cdata_open(struct inode *inode, struct file *filp)
 	cdata->offset = 0;
 
 	init_timer(&cdata->flush_timer);
+	init_timer(&cdata->sched_timer);
 
 	filp->private_data = (void *)cdata;
 
@@ -86,7 +88,14 @@ void flush_lcd(unsigned long priv)
 
 void cdata_wake_up(unsigned long priv)
 {
- 	// FIXME: Wake up process
+	struct cdata_t *cdata = (struct cdata *)filp->private_data;
+	struct timer_list *sched;
+
+	current->state = TASK_RUNNING;
+	schedule();
+
+	sched->expire = jiffies + 10;
+	add_timer(sched);
 }
 
 static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, 
@@ -94,6 +103,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 {
 	struct cdata_t *cdata = (struct cdata *)filp->private_data;
 	struct timer_list *timer;
+	struct timer_list *sched;
 	unsigned char *pixel;
 	unsigned int index;
 	unsigned int i;
@@ -101,6 +111,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 	pixel = cdata->buf;
 	index = cdata->index;
 	timer = &cdata->flush_timer;
+	sched = &cdata->sched_timer;
 
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
@@ -109,14 +120,21 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 		timer->expires = jiffies + 5*HZ;
 		timer->function = flush_lcd;
 		timer->data = (unsigned long)cdata;
-
 		add_timer(timer);
 
+		sched->expire = jiffies + 10;
+		sched->function = cdata_wake_up;
+		sched->data = (unsigned long)cdata;
+		add_timer(sched);
+repeat:
  		// FIXME: Process scheduling
  		current->state = TASK_INTERRUPTIBLE;
 		schedule();
  		
 		index = cdata->index;
+
+		if (index != 0)
+		    goto repeat;
 	    }
 	    copy_from_user(&pixel[index], &buf[i], 1);
 	    index++;
