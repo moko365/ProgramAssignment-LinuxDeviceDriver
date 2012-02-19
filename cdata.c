@@ -16,7 +16,7 @@
 #include <asm/uaccess.h>
 #include "cdata_ioctl.h"
 
-#define	BUF_SIZE	(12800)
+#define	BUF_SIZE	(128)
 #define	LCD_SIZE	(320*240*4)
 
 struct cdata_t {
@@ -80,6 +80,11 @@ void flush_lcd(void *priv)
 	cdata->offset = offset;
 }
 
+void cdata_wake_up()
+{
+ 	// FIXME: Wake up process
+}
+
 static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, 
 			loff_t *off)
 {
@@ -93,9 +98,13 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
+		
 		cdata->index = index;
+		// FIXME: Kernel scheduling
 	        flush_lcd((void *)cdata);
 		index = cdata->index;
+
+ 		// FIXME: Process scheduling
 	    }
 	    copy_from_user(&pixel[index], &buf[i], 1);
 	    index++;
