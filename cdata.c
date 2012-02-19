@@ -27,6 +27,9 @@ struct cdata_t {
 
     struct timer_list	flush_timer;
     struct timer_list	sched_timer;
+
+    //DECLARE_WAIT_QUEUE_HEAD(wq);
+     struct wait_queue	*wq;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
@@ -47,6 +50,8 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
 	init_timer(&cdata->flush_timer);
 	init_timer(&cdata->sched_timer);
+
+	init_waitqueue_head(cdata->wq);
 
 	filp->private_data = (void *)cdata;
 
@@ -90,9 +95,10 @@ void cdata_wake_up(unsigned long priv)
 {
 	struct cdata_t *cdata = (struct cdata *)filp->private_data;
 	struct timer_list *sched;
+        struct wait_queue	*wq;
 
-	current->state = TASK_RUNNING;
-	schedule();
+	wq = cdata->wq;
+	wake_up(wq);
 
 	sched->expire = jiffies + 10;
 	add_timer(sched);
@@ -107,11 +113,14 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 	unsigned char *pixel;
 	unsigned int index;
 	unsigned int i;
+        struct wait_queue	*wq;
+	wait_queue_t wait;
 
 	pixel = cdata->buf;
 	index = cdata->index;
 	timer = &cdata->flush_timer;
 	sched = &cdata->sched_timer;
+	wq = cdata->wq;
 
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
@@ -126,8 +135,11 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 		sched->function = cdata_wake_up;
 		sched->data = (unsigned long)cdata;
 		add_timer(sched);
+
+		wait.flags = 0;	
+		wait.task = current;
+		add_wait_queue(wq, &wait);
 repeat:
- 		// FIXME: Process scheduling
  		current->state = TASK_INTERRUPTIBLE;
 		schedule();
  		
@@ -135,6 +147,8 @@ repeat:
 
 		if (index != 0)
 		    goto repeat;
+
+		remove_wait_queue(wq, &wait);
 	    }
 	    copy_from_user(&pixel[index], &buf[i], 1);
 	    index++;
