@@ -1,1 +1,3 @@
-set bootargs root=/dev/ram0 rw console=ttyS0,115200 mem=64M ramdisk=16384; bootm 30f00000 32000000
+set bootargs root=/dev/ram0 rw console=ttyS0,115200 mem=60M ramdisk=16384; bootm 30f00000 32000000
+
+http://svn.moko365.com/ldd/

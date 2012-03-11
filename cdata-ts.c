@@ -19,11 +19,27 @@ void cdata_bh(unsigned long);
 DECLARE_TASKLET(my_tasklet, cdata_bh, NULL);
 
 struct input_dev ts_input;
+int x;
+int y;
+
+static int ts_input_open(struct input_dev *dev)
+{	
+	input_report_abs(dev, ABS_X, x);
+	input_report_abs(dev, ABS_Y, y);
+}
+
+static int ts_input_close(struct input_dev *dev)
+{
+}
 
 void cdata_ts_handler(int irq, void *priv, struct pt_regs *reg)
 {
 	printk(KERN_INFO "data_ts: TH...\n");
+
 	/* FIXME: read (x,y) from ADC */
+	x = 100;
+	y = 100;
+
 	tasklet_schedule(&my_tasklet);
 }
 
@@ -51,8 +67,11 @@ static int cdata_ts_open(struct inode *inode, struct file *filp)
 	}
 
 	/** handling input device ***/
-	ts_input.open =
-	ts_input.close =
+	ts_input.name = "cdata-ts";
+	ts_input.open = ts_input_open;
+	ts_input.close = ts_input_close;
+	// capabilties
+	ts_input.absbit[0] = BIT(ABS_X) | BIT(ABS_Y);
 
 	input_register_device(&ts_input);
 
