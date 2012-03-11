@@ -185,19 +185,35 @@ static int cdata_ioctl(struct inode *inode, struct file *filp,
 
 	switch (cmd) {
 	    case CDATA_CLEAR:
-		get_user(n, arg);
 		printk(KERN_INFO "CDATA_CLEAR: %d pixel\n", n);
-
-		// FIXME: Lock
-		fb = cdata->fb;
-		// FIXME: unlock
-		for (i = 0; i < n; i++)
-		    writel(0x00ff00ff, fb++);
-
 		return 0;
 	}
 
 	return -ENOTTY;
+}
+
+int cdata_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	unsigned long from;
+	unsigned long to;
+	unsigned long size;
+
+	from = vma->vm_start;
+	to = 0x33f00000;
+	size = vma->vm_end-vma->vm_start;
+
+	while (size) {
+	    remap_page_range(from, to, PAGE_SIZE, PAGE_SHARED);
+
+	    from += PAGE_SIZE;
+	    to += PAGE_SIZE;
+	    size -= PAGE_SIZE;
+	}
+
+	printk(KERN_ALERT "vma start: %p\n", vma->vm_start);
+	printk(KERN_ALERT "vma end: %p\n", vma->vm_end);
+
+	return 0;
 }
 
 static struct file_operations cdata_fops = {	
@@ -207,7 +223,7 @@ static struct file_operations cdata_fops = {
 	read:		cdata_read,
 	write:		cdata_write,
 	ioctl:		cdata_ioctl,
-
+	mmap:		cdata_mmap,
 };
 
 int cdata_init_module(void)
