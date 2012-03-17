@@ -12,7 +12,7 @@
 #include <linux/irq.h>
 #include <linux/miscdevice.h>
 #include <linux/input.h>
-#include <linux/semaphore.h>
+#include <linux/mutex.h>
 #include <linux/spinlock.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
@@ -31,7 +31,7 @@ struct cdata_t {
     struct timer_list	sched_timer;
 
     wait_queue_head_t	wq;
-    struct semaphore 	sem;
+    DEFINE_MUTEX(mutex);
     spinlock_t		lock;
 };
 
@@ -56,7 +56,7 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
 	init_waitqueue_head(&cdata->wq);
 
-	sema_init(&cdata->sem, 1);
+	mutex_init(&cdata->mutex);
 	spin_lock_init(&cdata->lock);
 
 	filp->private_data = (void *)cdata;
@@ -126,7 +126,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
         wait_queue_head_t *wq;
 	wait_queue_t wait;
 
-	down_interruptible(&cdata->sem);
+	mutex_lock(&cdata->mutex);
 
 	spin_lock_irqsave(&cdata->lock);
 	pixel = cdata->buf;
@@ -137,7 +137,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 	sched = &cdata->sched_timer;
 	wq = &cdata->wq;
 
-	up(&cdata->sem);
+	mutex_unlock(&cdata->mutex);
 
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
