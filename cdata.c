@@ -12,6 +12,7 @@
 #include <linux/irq.h>
 #include <linux/miscdevice.h>
 #include <linux/input.h>
+#include <linux/semaphore.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include "cdata_ioctl.h"
@@ -29,6 +30,7 @@ struct cdata_t {
     struct timer_list	sched_timer;
 
     wait_queue_head_t	wq;
+    struct semaphore 	sem;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
@@ -51,6 +53,8 @@ static int cdata_open(struct inode *inode, struct file *filp)
 	init_timer(&cdata->sched_timer);
 
 	init_waitqueue_head(&cdata->wq);
+
+	sema_init(&cdata->sem, 1);
 
 	filp->private_data = (void *)cdata;
 
@@ -117,16 +121,23 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
         wait_queue_head_t *wq;
 	wait_queue_t wait;
 
+	down_interruptible(&cdata->sem);
+
 	pixel = cdata->buf;
 	index = cdata->index;
 	timer = &cdata->flush_timer;
 	sched = &cdata->sched_timer;
 	wq = &cdata->wq;
 
+	up(&cdata->sem);
+
 	for (i = 0; i < size; i++) {
 	    if (index >= BUF_SIZE) {
 		
+		down_interruptible(&cdata->sem);
 		cdata->index = index;
+		up(&cdata->sem);
+
 		timer->expires = jiffies + 5*HZ;
 		timer->function = flush_lcd;
 		timer->data = (unsigned long)cdata;
@@ -144,7 +155,9 @@ repeat:
  		current->state = TASK_INTERRUPTIBLE;
 		schedule();
  		
+		down_interruptible(&cdata->sem);
 		index = cdata->index;
+		up(&cdata->sem);
 
 		if (index != 0)
 		    goto repeat;
@@ -156,7 +169,9 @@ repeat:
 	    index++;
 	}
 
+	down_interruptible(&cdata->sem);
     	cdata->index = index;
+	up(&cdata->sem);
 
 	return 0;
 }
