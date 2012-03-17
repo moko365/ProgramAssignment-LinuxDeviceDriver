@@ -13,6 +13,7 @@
 #include <linux/miscdevice.h>
 #include <linux/input.h>
 #include <linux/semaphore.h>
+#include <linux/spinlock.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include "cdata_ioctl.h"
@@ -31,6 +32,7 @@ struct cdata_t {
 
     wait_queue_head_t	wq;
     struct semaphore 	sem;
+    spinlock_t		lock;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
@@ -55,6 +57,7 @@ static int cdata_open(struct inode *inode, struct file *filp)
 	init_waitqueue_head(&cdata->wq);
 
 	sema_init(&cdata->sem, 1);
+	spin_lock_init(&cdata->lock);
 
 	filp->private_data = (void *)cdata;
 
@@ -76,10 +79,12 @@ void flush_lcd(unsigned long priv)
 	int i;
 	int j;
 
+	spin_lock(&cdata->lock);
 	fb = (unsigned char *)cdata->fb;
 	pixel = cdata->buf;
 	index = cdata->index;
 	offset = cdata->offset;
+	spin_unlock(&cdata->lock);
 
 	for (i = 0; i < index; i++) {
 	    writeb(pixel[i], fb+offset);
@@ -123,8 +128,11 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 
 	down_interruptible(&cdata->sem);
 
+	spin_lock()
 	pixel = cdata->buf;
 	index = cdata->index;
+	spin_unlock()
+
 	timer = &cdata->flush_timer;
 	sched = &cdata->sched_timer;
 	wq = &cdata->wq;
