@@ -161,6 +161,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 		add_wait_queue(wq, &wait);
 repeat:
  		current->state = TASK_INTERRUPTIBLE;
+		smp_mb();
 		schedule();
  		
 		down_interruptible(&cdata->sem);
