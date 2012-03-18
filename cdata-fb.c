@@ -13,7 +13,7 @@
 #include <linux/miscdevice.h>
 #include <linux/input.h>
 //#include <linux/config.h>
-//#include <linux/tqueue.h>
+#include <linux/tqueue.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/hardware.h>
@@ -110,8 +110,8 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
 	init_timer(&cdata->timer);
 
-	INIT_TQUEUE(&cdata->tq, lcd_write, (void *)cdata);
-	//INIT_WORK(&cdata->work, lcd_write);
+	//INIT_TQUEUE(&cdata->tq, lcd_write, (void *)cdata);
+	INIT_WORK(&cdata->work, lcd_write);
 
 	filp->private_data = (void *)cdata;
 
@@ -182,7 +182,8 @@ static ssize_t cdata_write(struct file *filp, const char *buf,
 	    if (idx >= BUF_LENGTH) {
 		//cdata->buf_idx = idx;
 
-		schedule_task(&cdata->tq); 
+		//schedule_task(&cdata->tq); 
+		queue_work(&cdata->work);
 
 		/* blocking io */
 		spin_lock();

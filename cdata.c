@@ -227,7 +227,9 @@ int cdata_mmap(struct file *filp, struct vm_area_struct *vma)
 	size = vma->vm_end-vma->vm_start;
 
 	while (size) {
-	    remap_page_range(from, to, PAGE_SIZE, PAGE_SHARED);
+	    remap_pfn_range(vma, from, 
+                     0x33f00000, 
+                     PAGE_SIZE, vma->vm_page_prot);
 
 	    from += PAGE_SIZE;
 	    to += PAGE_SIZE;
