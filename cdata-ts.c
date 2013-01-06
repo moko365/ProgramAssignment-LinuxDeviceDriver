@@ -24,8 +24,11 @@ struct cdata_ts {
 	int y;
 };
 
+void cdata_ts_handler(int irq, void *priv, struct pt_regs *reg);
+
 static int ts_input_open(struct input_dev *dev)
 {	
+	struct cdata_ts *cdata = (struct cdata_ts *)dev->private;
 }
 
 static int ts_input_close(struct input_dev *dev)
@@ -84,6 +87,11 @@ static int cdata_ts_open(struct inode *inode, struct file *filp)
 	cdata->ts_input.name = "cdata-ts";
 	cdata->ts_input.open = ts_input_open;
 	cdata->ts_input.close = ts_input_close;
+    cdata->ts_input.private = (void *)cdata;
+
+    // Set events
+    cdata->ts_input.evbit[0] = BIT(EV_ABS);
+    // Set types
 	cdata->ts_input.absbit[0] = BIT(ABS_X) | BIT(ABS_Y);
 
 	input_register_device(&cdata->ts_input);
@@ -152,3 +160,4 @@ module_init(cdata_ts_init_module);
 module_exit(cdata_ts_cleanup_module);
 
 MODULE_LICENSE("GPL");
+
