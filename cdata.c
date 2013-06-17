@@ -6,6 +6,7 @@
 #include <linux/miscdevice.h>
 #include <linux/wait.h>
 #include <asm/io.h>
+#include <asm/uaccess.h>
 #include "cdata_ioctl.h"
 
 #ifdef CONFIG_SMP
@@ -50,14 +51,17 @@ static ssize_t cdata_write(struct file *filp, const char *buf,
 {
     struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
 
-    copy_from_user(buf, cdata->buf, size);
+    copy_from_user(cdata->buf, buf, size);
 
 	return 0;
 }
 
 static int cdata_release(struct inode *inode, struct file *filp)
 {
+    struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
+
 	printk(KERN_ALERT "cdata: in cdata_release()\n");
+	printk(KERN_ALERT "cdata: flush buf = %s\n", cdata->buf);
 	return 0;
 }
 
