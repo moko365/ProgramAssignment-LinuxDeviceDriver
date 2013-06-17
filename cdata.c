@@ -15,11 +15,10 @@
 
 #define	CDATA_MAJOR 121 
 
-wait_queue_head_t	rq;
-
 struct cdata_t {
     char    *buf;
     int     index;
+    wait_queue_head_t	wq;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
@@ -28,6 +27,9 @@ static int cdata_open(struct inode *inode, struct file *filp)
     
     cdata = (struct cdata_t *)kmalloc(sizeof(struct cdata_t), GFP_KERNEL);
     cdata->buf = (char *)kmalloc(64, GFP_KERNEL);
+
+    cdata->index = 0;
+    init_waitqueue_head (&cdata->wq);
 
     filp->private_data = (void *)cdata;
 
@@ -50,8 +52,17 @@ static ssize_t cdata_write(struct file *filp, const char *buf,
 				size_t size, loff_t *off)
 {
     struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
+    int i;
 
-    copy_from_user(cdata->buf, buf, size);
+    for (i = 0; i < size; i++) {
+        copy_from_user(&cdata->buf[cdata->index], &buf[i], 1);
+        cdata->index++;
+
+        if (cdata->index >= 64) {
+            interruptible_sleep_on(&cdata->wq);
+            // Ok, buffer is empty
+        }
+    }
 
 	return 0;
 }
