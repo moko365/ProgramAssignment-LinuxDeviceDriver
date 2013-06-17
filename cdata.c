@@ -16,10 +16,19 @@
 
 wait_queue_head_t	rq;
 
+struct cdata_t {
+    char    *buf;
+    int     index;
+};
+
 static int cdata_open(struct inode *inode, struct file *filp)
 {
-	printk(KERN_ALERT "cdata: in cdata_open()\n");
-	init_waitqueue_head(&rq);
+    struct cdata_t *cdata;
+    
+    cdata = (struct cdata_t *)kmalloc(sizeof(struct cdata_t), GFP_KERNEL);
+    cdata->buf = (char *)kmalloc(64, GFP_KERNEL);
+
+    filp->private_data = (void *)cdata;
 
 	return 0;
 }
@@ -39,7 +48,10 @@ static ssize_t cdata_read(struct file *filp, char *buf,
 static ssize_t cdata_write(struct file *filp, const char *buf, 
 				size_t size, loff_t *off)
 {
-	printk(KERN_ALERT "cdata_write: %s\n", buf);
+    struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
+
+    copy_from_user(buf, cdata->buf, size);
+
 	return 0;
 }
 

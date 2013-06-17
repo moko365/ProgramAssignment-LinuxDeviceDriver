@@ -10,6 +10,6 @@ int main(void)
     child = fork();
 
     fd = open("/dev/cdata", O_RDWR);
-    ioctl(fd, IOCTL_INIT, NULL);
+    write(fd, "hello", 5);
     close(fd);
 }
