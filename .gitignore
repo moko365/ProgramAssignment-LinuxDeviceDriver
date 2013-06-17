@@ -1,1 +1,10 @@
 tags
+*.o
+*.ko
+.*cmd modules.*
+Module.*
+.tmp_versions
+*.mod.c
+.cdata*
+modules.*
+test
