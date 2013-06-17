@@ -19,7 +19,17 @@ struct cdata_t {
     char    *buf;
     int     index;
     wait_queue_head_t	wq;
+    struct timer_list   timer;
 };
+
+void flush_buffer(unsigned long priv)
+{
+    struct cdata_t *cdata = (struct cdata_t *)priv;
+
+    cdata->index = 0;
+
+    wake_up(&cdata->wq);
+}
 
 static int cdata_open(struct inode *inode, struct file *filp)
 {
@@ -30,6 +40,8 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
     cdata->index = 0;
     init_waitqueue_head (&cdata->wq);
+
+    init_timer(&cdata->timer);
 
     filp->private_data = (void *)cdata;
 
@@ -52,6 +64,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf,
 				size_t size, loff_t *off)
 {
     struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
+    struct timer_list *timer = &cdata->timer;
     int i;
 
     for (i = 0; i < size; i++) {
@@ -59,8 +72,18 @@ static ssize_t cdata_write(struct file *filp, const char *buf,
         cdata->index++;
 
         if (cdata->index >= 64) {
+            printk(KERN_ALERT "cdata: buffer full\n");
+            // schedule execution (deferred execution)
+            timer->expires = jiffies + 5*HZ;
+            timer->function = flush_buffer;
+            timer->data = (unsigned long)cdata;
+
+            add_timer(timer);
+
             interruptible_sleep_on(&cdata->wq);
+            
             // Ok, buffer is empty
+            printk(KERN_ALERT "cdata: buffer empty\n");
         }
     }
 
@@ -77,6 +100,7 @@ static int cdata_release(struct inode *inode, struct file *filp)
 }
 
 struct file_operations cdata_fops = {	
+    owner:      THIS_MODULE,
 	open:		cdata_open,
 	release:	cdata_release,
 	ioctl:		cdata_ioctl,
