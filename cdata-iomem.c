@@ -44,7 +44,7 @@ void flush_buffer(unsigned long priv)
         writeb(cdata->buf[i], ioaddr++); 
     }
 
-    if (cdata->fbmem >= cdata->fbmem_end)
+    if (ioaddr >= cdata->fbmem_end)
         ioaddr = cdata->fbmem_start;
 
     cdata->fbmem = ioaddr;
@@ -103,7 +103,7 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, loff
         if (index >= BUF_SIZE) {
             printk(KERN_INFO "cdata: buffer full\n");
 
-            timer->expires =  jiffies + 5*HZ;
+            timer->expires =  jiffies + 1;
             timer->function = flush_buffer;
             timer->data = (unsigned long)cdata;
 
