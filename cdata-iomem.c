@@ -160,7 +160,7 @@ int cdata_ioctl(struct inode *inode, struct file *filp,
     return 0;
 }
 
-static struct file_operations cdata_fops = {    
+static struct file_operations __cdata_fops = {    
         owner:      THIS_MODULE,
         open:       cdata_open,
         release:    cdata_close,
@@ -169,14 +169,24 @@ static struct file_operations cdata_fops = {
         ioctl:      cdata_ioctl,
 };
 
+static struct miscdevice cdata_fops = {
+        minor:      12,
+        name:       "cdata",
+        fops:       &__cdata_fops,
+};
+
 int cdata_init_module(void)
 {
-    register_chrdev(121, "cdata", &cdata_fops);
+    if (misc_register(&cdata_fops)) {
+        printk(KERN_ALERT "cdata: register failed.\n");
+        return -1;
+    }
+    printk(KERN_ALERT "cdata-fb: registered .\n");
 }
 
 void cdata_cleanup_module(void)
 {
-    unregister_chrdev(121, "cdata");
+    misc_deregister(&cdata_fops);
 }
 
 module_init(cdata_init_module);
