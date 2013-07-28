@@ -27,8 +27,8 @@ struct cdata_t {
     char *buf;
     unsigned int        index;
     wait_queue_head_t   wq;
-    unsigned int        *fbmem;
-    unsigned int        *fbmem_start, *fbmem_end;
+    unsigned char        *fbmem;
+    unsigned char        *fbmem_start, *fbmem_end;
     struct timer_list   timer;
 };
 
@@ -41,11 +41,11 @@ void flush_buffer(unsigned long priv)
     ioaddr = (unsigned char *)cdata->fbmem;
 
     for (i = 0; i < BUF_SIZE; i++) {
+        if (ioaddr >= cdata->fbmem_end)
+            ioaddr = cdata->fbmem_start;
+
         writeb(cdata->buf[i], ioaddr++); 
     }
-
-    if (ioaddr >= cdata->fbmem_end)
-        ioaddr = cdata->fbmem_start;
 
     cdata->fbmem = ioaddr;
     cdata->index = 0;
@@ -128,6 +128,8 @@ static int cdata_close(struct inode *inode, struct file *filp)
     cdata->buf[index] = '\0';
 
     printk(KERN_INFO "in cdata_close: %s\n", cdata->buf);
+
+    del_timer(&cdata->timer);
 
     return 0;
 }
