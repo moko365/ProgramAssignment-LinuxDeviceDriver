@@ -1,0 +1,45 @@
+Unable to handle kernel paging request at virtual address c405b000
+pgd = c0004000
+*pgd = 302f9021, *pmd = 302f9021, *pte = 00000000, *ppte = 00000000
+Internal error: Oops: ffffffff
+CPU: 0
+pc : [<c00c0200>]    lr : [<c0029988>]    Not tainted
+sp : c0179ea8  ip : 000003ff  fp : c0179eb4
+r10: c0191c78  r9 : c0179f64  r8 : 60000093
+r7 : c0191444  r6 : c017a0a0  r5 : 00000000  r4 : 00000001
+r3 : 00000000  r2 : 00000001  r1 : c405b000  r0 : c02b7420
+Flags: Nzcv  IRQs on  FIQs on  Mode SVC_32  Segment kernel
+Control: 3177  Table: 32058000  DAC: 0000001D
+Process swapper (pid: 0, stackpage=c0179000)
+Stack: (0xc0179e98 to 0xc017a000)
+9e80:                                                       c0029988 c00c0200 
+9ea0: 80000013 ffffffff c0179edc c0179eb8 c0029988 c00c01e4 c01910a0 00000000 
+9ec0: c017a0a0 00000000 60000093 c0191080 c0179ef0 c0179ee0 c0026060 c0029720 
+9ee0: c01910a0 c0179f10 c0179ef4 c0025f20 c0026034 00000001 c017a0c0 fffffffe 
+9f00: c0191080 c0179f34 c0179f14 c0025bec c0025eb4 00000000 0000000e 00000000 
+9f20: c01891bc c0188ffc c0179f60 c0179f38 c0016138 c0025b7c ea000000 c0179fac 
+9f40: 00000001 c001cbe4 60000013 ffffffff 30013654 c0179fb8 c0179f64 c00154c0 
+9f60: c0016018 00000000 00000032 00000000 c0016c70 c0016c70 c0178000 c018981c 
+9f80: c0189804 c017ac48 41129200 30013654 c0179fb8 c0179fbc c0179fac c0016c84 
+9fa0: c001cbe4 60000013 ffffffff c0179fd0 c0179fbc c00165d0 c0016c7c 00003c00 
+9fc0: c01b597c c0179fe0 c0179fd4 c0015030 c0016584 c0179ffc c0179fe4 c00088bc 
+9fe0: c001500c c0189c30 c01bd414 c01bd414 00000000 c017a000 c0008080 c0008788 
+Backtrace: 
+Function entered at [<c00c01d8>] from [<c0029988>]
+Function entered at [<c0029714>] from [<c0026060>]
+Function entered at [<c0026028>] from [<c0025f20>]
+ r4 = C01910A0 
+ Function entered at [<c0025ea8>] from [<c0025bec>]
+  r7 = C0191080  r6 = FFFFFFFE  r5 = C017A0C0  r4 = 00000001
+  Function entered at [<c0025b70>] from [<c0016138>]
+   r8 = C0188FFC  r7 = C01891BC  r6 = 00000000  r5 = 0000000E
+    r4 = 00000000 
+    Function entered at [<c001600c>] from [<c00154c0>]
+    Function entered at [<c0016c70>] from [<c00165d0>]
+    Function entered at [<c0016578>] from [<c0015030>]
+     r5 = C01B597C  r4 = 00003C00 
+     Function entered at [<c0015000>] from [<c00088bc>]
+     Function entered at [<c000877c>] from [<c0008080>]
+     Code: e5903000 e7d33002 e2822001 e152000c (e4c13001) 
+     Kernel panic: Aiee, killing interrupt handler!
+     In interrupt handler - not syncing
