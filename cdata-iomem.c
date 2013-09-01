@@ -93,6 +93,14 @@ static ssize_t cdata_read(struct file *filp, char *buf, size_t size, loff_t *off
     return 0;
 }
 
+/**
+ * Advanced linux device driver training:
+ *
+ *   - local variable
+ *   - atomic operation
+ *   - SMP support (avoid IO reordering, use memroy barrier)
+ *   - code review
+ */
 static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, loff_t *off)
 {
     struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
@@ -126,7 +134,9 @@ repeat:
             set_current_state(TASK_INTERRUPTIBLE);
             schedule()
 
+            down_interruptible(&cdata->sem);
             index = cdata->index;
+            up(&cdata->sem);
 
             if (index != 0)
                 goto repeat;
@@ -137,9 +147,9 @@ repeat:
         index++;
     }
 
+    down_interruptible(&cdata->sem);
     cdata->index = index;
-    
-   up(&cdata->sem);
+    up(&cdata->sem);
 
     return 0;
 }
