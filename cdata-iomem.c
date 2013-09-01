@@ -29,7 +29,6 @@ struct cdata_t {
     wait_queue_head_t   wq;
     unsigned char        *fbmem;
     unsigned char        *fbmem_start, *fbmem_end;
-    struct timer_list   timer;
 
     struct semaphore sem;
     struct work_struct work;
@@ -83,8 +82,6 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
     cdata->fbmem = cdata->fbmem_start;
 
-    init_timer(&cdata->timer);
-
     filp->private_data = (void *)cdata;
 
     printk(KERN_INFO "in cdata_open: filp = %08x\n", filp);
@@ -99,34 +96,34 @@ static ssize_t cdata_read(struct file *filp, char *buf, size_t size, loff_t *off
 static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, loff_t *off)
 {
     struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
-    struct timer_list *timer;
-    unsigned int index = cdata->index;
+    unsigned int index;
     wait_queue_t wait;
     int i;
 
+    // NOTE: put shared data into local variables
     down_interruptible(&cdata->sem);
 
-    timer = &cdata->timer;
+    index = cdata->index;
+
+    // NOTE: share the same memory space
+    //wq = &cdata->wq;
+
+    up(&cdata->sem);
 
     for (i = 0; i < size; i++) {
         if (index >= BUF_SIZE) {
             printk(KERN_INFO "cdata: buffer full\n");
 
-#if 0
-            timer->expires =  jiffies + 1;
-            timer->function = flush_buffer;
-            timer->data = (unsigned long)cdata;
-
-            add_timer(timer);
-#else
             schedule_work_on(1, &cdata->work);
-#endif
 
             wait.flags = 0;
             wait.task = current;
+
+            // NOTE: must be atomic operation
             add_wait_queue(&cdata->wq, &wait);
 repeat:
-            current->state = TASK_INTERRUPTIBLE;
+            //current->state = TASK_INTERRUPTIBLE;
+            set_current_state(TASK_INTERRUPTIBLE);
             schedule()
 
             index = cdata->index;
@@ -155,8 +152,6 @@ static int cdata_close(struct inode *inode, struct file *filp)
     cdata->buf[index] = '\0';
 
     printk(KERN_INFO "in cdata_close: %s\n", cdata->buf);
-
-    del_timer(&cdata->timer);
 
     return 0;
 }
