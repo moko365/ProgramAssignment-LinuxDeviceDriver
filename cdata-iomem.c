@@ -30,11 +30,14 @@ struct cdata_t {
     unsigned char        *fbmem;
     unsigned char        *fbmem_start, *fbmem_end;
     struct timer_list   timer;
+
+    struct semaphore sem;
+    struct work_struct work;
 };
 
-void flush_buffer(unsigned long priv)
+void flush_buffer((struct work_struct *work)
 {
-    struct cdata_t *cdata = (struct cdata_t *)priv;
+    struct cdata_t *cdata = container_of(work, struct cdata_t, work);
     unsigned char *ioaddr;
     int i;
 
@@ -63,6 +66,9 @@ static int cdata_open(struct inode *inode, struct file *filp)
 
     cdata->index = 0;
     init_waitqueue_head(&cdata->wq);
+
+    sema_init(&cdata->sem, 0);
+    INIT_WORK(&cdata->work, flush_buffer);
 
     cdata->fbmem_start = (unsigned int *) 
             ioremap(IO_MEM, VGA_MODE_WIDTH
@@ -95,7 +101,10 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, loff
     struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
     struct timer_list *timer;
     unsigned int index = cdata->index;
+    wait_queue_t wait;
     int i;
+
+    down_interruptible(&cdata->sem);
 
     timer = &cdata->timer;
 
@@ -103,19 +112,37 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, loff
         if (index >= BUF_SIZE) {
             printk(KERN_INFO "cdata: buffer full\n");
 
+#if 0
             timer->expires =  jiffies + 1;
             timer->function = flush_buffer;
             timer->data = (unsigned long)cdata;
 
             add_timer(timer);
+#else
+            schedule_work_on(1, &cdata->work);
+#endif
 
-            interruptible_sleep_on(&cdata->wq); //re-scheduling
+            wait.flags = 0;
+            wait.task = current;
+            add_wait_queue(&cdata->wq, &wait);
+repeat:
+            current->state = TASK_INTERRUPTIBLE;
+            schedule()
+
+            index = cdata->index;
+
+            if (index != 0)
+                goto repeat;
+
+            remove_wait_queue(wq, &wait);
         }
         copy_from_user(&cdata->buf[index], &buf[i], 1);
         index++;
     }
 
     cdata->index = index;
+    
+   up(&cdata->sem);
 
     return 0;
 }
