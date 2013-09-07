@@ -156,9 +156,20 @@ static void shtxx_start_transmission(void)
        SHT_SCL_LOW();
        delay_sht();
        //delay 1ms
-       udelay(1000);
+#if 0
+    // use HR timer
+#else
+    udelay(1000); 
+#endif
 }
 
+void sht_sync()
+{
+    spin_lock();
+    omap34xx_sht7x->sync = 1;
+    spin_unlock();
+    wake_up();
+}
 
 u8 shtxx_write_byte(unsigned char output)
 {
@@ -260,6 +271,18 @@ static void shtxx_read_TH(struct sht7x_data *pResTH)
 
    /* 1. Measure Temperature */
    shtxx_start_transmission();                     //Start Transmission
+
+repeat:
+   spin_unlock();
+   //prepare_to_wait();
+   sleep_interruptible();
+   spin_lock();
+
+   if (!pResTh->sync)
+       goto repeat;
+
+   spin_unlock();
+
    resT = shtxx_write_byte(SHT_MEASURE_TEMP);      //Write commmand
    if(resT == true){
        pResTH->valueT = shtxx_read_word();         //Read Temperature

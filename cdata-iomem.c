@@ -30,15 +30,21 @@ struct cdata_t {
     unsigned char        *fbmem;
     unsigned char        *fbmem_start, *fbmem_end;
 
-    struct semaphore sem;
+    //struct semaphore sem;
+    struct mutex *lock;
+
     struct work_struct work;
 };
+
+// Global lock
+DEFINE_MUTEX(cdata_sem);
 
 void flush_buffer((struct work_struct *work)
 {
     struct cdata_t *cdata = container_of(work, struct cdata_t, work);
     unsigned char *ioaddr;
     int i;
+    char d;
 
     ioaddr = (unsigned char *)cdata->fbmem;
 
@@ -46,11 +52,17 @@ void flush_buffer((struct work_struct *work)
         if (ioaddr >= cdata->fbmem_end)
             ioaddr = cdata->fbmem_start;
 
-        writeb(cdata->buf[i], ioaddr++); 
+        d = atomic_read(&cdata->buf[i]);
+        writeb(d, ioaddr++); 
     }
 
     cdata->fbmem = ioaddr;
+
+    //mutex_lock(&cdata->lock);
+    spin_lock_irq();
     cdata->index = 0;
+    spin_unlock_irq();
+    //mutex_unlock(&cdata->lock);
 
     wake_up(&cdata->wq);
 }
@@ -66,7 +78,9 @@ static int cdata_open(struct inode *inode, struct file *filp)
     cdata->index = 0;
     init_waitqueue_head(&cdata->wq);
 
-    sema_init(&cdata->sem, 0);
+    //sema_init(&cdata->sem, 0);
+    mutex_init(&cdata->lock);
+
     INIT_WORK(&cdata->work, flush_buffer);
 
     cdata->fbmem_start = (unsigned int *) 
@@ -85,6 +99,7 @@ static int cdata_open(struct inode *inode, struct file *filp)
     filp->private_data = (void *)cdata;
 
     printk(KERN_INFO "in cdata_open: filp = %08x\n", filp);
+
     return 0;
 }
 
@@ -109,14 +124,16 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size, loff
     int i;
 
     // NOTE: put shared data into local variables
-    down_interruptible(&cdata->sem);
+    //down_interruptible(&cdata->sem);
+    mutex_lock(&cdata->lock);
 
     index = cdata->index;
 
     // NOTE: share the same memory space
     //wq = &cdata->wq;
 
-    up(&cdata->sem);
+    //up(&cdata->sem);
+    mutex_unlock(&cdata->lock);
 
     for (i = 0; i < size; i++) {
         if (index >= BUF_SIZE) {
@@ -134,9 +151,9 @@ repeat:
             set_current_state(TASK_INTERRUPTIBLE);
             schedule()
 
-            down_interruptible(&cdata->sem);
+            mutex_lock(&cdata->lock);
             index = cdata->index;
-            up(&cdata->sem);
+            mutex_unlock(&cdata->lock);
 
             if (index != 0)
                 goto repeat;
@@ -147,9 +164,9 @@ repeat:
         index++;
     }
 
-    down_interruptible(&cdata->sem);
+    mutex_lock(&cdata->lock);
     cdata->index = index;
-    up(&cdata->sem);
+    mutex_unlock(&cdata->lock);
 
     return 0;
 }

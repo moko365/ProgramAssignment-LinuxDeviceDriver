@@ -1,7 +1,7 @@
 #
 # Author: jollen
 # 
-obj-m := cdata_dev_class.o
+obj-m :=  omap34xx_sht7x.o
 
 KDIR := /lib/modules/2.6.24-26-generic/build
 PWD := $(shell pwd)
