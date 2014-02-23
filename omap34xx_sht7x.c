@@ -48,41 +48,41 @@ static struct platform_device omap34xx_sht7x_device = {
 
 /*********************** internal ******************************/
 
-static __inline void set_gpio_184_output()
+static  void set_gpio_184_output()
 {
 }
 
-static __inline void set_gpio_185_output()
+static  void set_gpio_185_output()
 {
 }
 
-static __inline void set_gpio_184_input()
+static  void set_gpio_184_input()
 {
 }
 
-static __inline void set_gpio_185_input()
+static  void set_gpio_185_input()
 {
 }
 
 /* GPIO High/Low */
-static __inline void gpio_184_high()
+static  void gpio_184_high()
 {
 }
 
-static __inline void gpio_185_high()
+static  void gpio_185_high()
 {
 }
 
-static __inline void gpio_184_low()
+static  void gpio_184_low()
 {
 }
 
-static __inline void gpio_185_low()
+static  void gpio_185_low()
 {
 }
 
 /* GPIO 185 Data In */
-static __inline u32 gpio_185_read()
+static  u32 gpio_185_read()
 {
 }
 
@@ -165,10 +165,10 @@ static void shtxx_start_transmission(void)
 
 void sht_sync()
 {
-    spin_lock();
-    omap34xx_sht7x->sync = 1;
-    spin_unlock();
-    wake_up();
+    //spin_lock();
+    //omap34xx_sht7x->sync = 1;
+    //spin_unlock();
+    //wake_up();
 }
 
 u8 shtxx_write_byte(unsigned char output)
@@ -273,15 +273,15 @@ static void shtxx_read_TH(struct sht7x_data *pResTH)
    shtxx_start_transmission();                     //Start Transmission
 
 repeat:
-   spin_unlock();
+   //spin_unlock();
    //prepare_to_wait();
-   sleep_interruptible();
-   spin_lock();
+   //sleep_interruptible();
+   //spin_lock();
 
-   if (!pResTh->sync)
-       goto repeat;
+   //if (!pResTh->sync)
+   //    goto repeat;
 
-   spin_unlock();
+   //spin_unlock();
 
    resT = shtxx_write_byte(SHT_MEASURE_TEMP);      //Write commmand
    if(resT == true){
