@@ -27,7 +27,6 @@ unsigned char *fbmem;
 struct cdata_t {
     unsigned char *buf;
     int	idx;
-    int offset;
     wait_queue_head_t   wq;
     struct semaphore    sem;
     struct timer_list   flush_timer;
@@ -40,15 +39,12 @@ struct cdata_t {
 
 };
 
-//static void flush_buffer(unsigned char *priv)
 static void flush_buffer(struct work_struct *work)
 {
-	//struct cdata_t *cdata = (struct cdata *)priv;
 	struct cdata_t *cdata = container_of(work, struct cdata_t, work); 
 	int i, j;
 	wait_queue_head_t       *wq;
 	int index;
-        int offset;
 	//unsigned char pixel[BUF_SIZE];
 	unsigned char *pixel;
 	int len;
@@ -58,7 +54,6 @@ static void flush_buffer(struct work_struct *work)
 	down_interruptible(&cdata->sem);
 	wq = &cdata->wq;
 	index = cdata->idx;
-	offset = cdata->offset;
 	//pixel = cdata->buf;
 
 	len = kfifo_len(cdata->cdata_fifo);
@@ -122,7 +117,6 @@ static int cdata_open(struct inode *inode, struct file *filp)
 		return PTR_ERR(cdata->cdata_fifo);
 	}
 	cdata->idx = 0;
-	cdata->offset = 0;
 
 	filp->private_data = (void *)cdata;
 
@@ -171,7 +165,6 @@ static ssize_t cdata_write(struct file *filp, const char *buf, size_t size,
 
 			timer->expires = jiffies + 5*HZ;
 			timer->function = flush_buffer;
-			//timer->data = (unsigned long)cdata;
 			timer->data =(unsigned long *)&cdata->work; 
 			add_timer(timer);
 
@@ -206,15 +199,12 @@ repeat:
 			//	schedule();
 			//}
 		} else {
-			//copy_from_user(&cdata->buf[i], &buf[i], 1);
 			copy_from_user(&temp[0], &buf[i], 1);
 			if(!kfifo_put(cdata->cdata_fifo, &temp[0], 1)) {
 				printk("Simon: kfifo_put ERROR\n");
 			}
-			//idx++;
 		}
 	}
-	//cdata->idx = idx;
 	
 	return 0;
 }
