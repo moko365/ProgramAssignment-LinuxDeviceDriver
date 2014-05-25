@@ -29,17 +29,18 @@ struct cdata_t {
 	unsigned char 	buf[BUF_SIZE];
 
 	wait_queue_head_t	wq;
+	struct timer_list	timer;
 };
 
 static int cdata_open(struct inode *inode, struct file *filp)
 {
-	int minor;
 	struct cdata_t *cdata;
 
 	cdata = (struct cdata_t *)kmalloc(sizeof(struct cdata_t), GFP_KERNEL);
 
 	cdata->count = 0;
 	init_waitqueue_head(&cdata->wq);
+	init_timer(&cdata->timer);
 
 	filp->private_data = (void *)cdata;
 
@@ -76,12 +77,25 @@ static ssize_t cdata_read(struct file *filp, char *buf,
 	struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
 }
 
+void flush_lcd(unsigned long priv)
+{
+	struct cdata_t *cdata = (struct cdata_t *)priv;
+	unsigned int count = cdata->count;
+	unsigned char *buf = &cdata->buf;
+
+	cdata->count = 0;
+
+	wake_up(&cdata->wq);
+}
+
 static ssize_t cdata_write(struct file *filp, const char *user, 
 				size_t size, loff_t *off)
 {
 	struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
 	unsigned int count = cdata->count;
 	unsigned char *buf = &cdata->buf;
+	struct timer_list *timer = &cdata->timer;
+
 	int i;
 
 	for (i = 0; i < size; i++) {
@@ -90,7 +104,17 @@ static ssize_t cdata_write(struct file *filp, const char *user,
 		count++;
 
 		if (count >= BUF_SIZE) {
+			printk(KERN_ALERT "cdata: buffer is full\n");
+
+			timer->expires = jiffies + 100;
+			timer->function = flush_lcd;
+			timer->data = (unsigned long)cdata;
+
+			add_timer(timer);
+
 			interruptible_sleep_on(&cdata->wq);
+
+			count = cdata->count;
 		}
 	}
 
