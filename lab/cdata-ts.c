@@ -65,8 +65,13 @@ void cdata_bh(unsigned long priv)
 	struct input_dev *dev = &cdata->ts_input;
 	int x, y, press;
 
+	spin_lock_irq();
+
 	x = cdata->x;
 	y = cdata->y;
+	
+	spin_unlock_irq();
+
 	press = !cdata->press;
 
 	printk(KERN_INFO "data_ts: down...\n");
@@ -100,13 +105,6 @@ static int cdata_ts_open(struct inode *inode, struct file *filp)
                  XP_AIN | XM_HIZ | YP_AIN | YM_GND | \
                  XP_PST(WAIT_INT_MODE);
 
-	/* Request touch panel IRQ */
-	if (request_irq(IRQ_TC, cdata_ts_handler, 0, 
-		"cdata-ts", (void *)cdata)) {
-	    printk(KERN_ALERT "cdata: request irq failed.\n");
-	    return -1;
-	}
-
     /** handling input device ***/
     cdata->ts_input.name = "cdata-ts";
     cdata->ts_input.open = ts_input_open;
@@ -122,14 +120,21 @@ static int cdata_ts_open(struct inode *inode, struct file *filp)
 
     input_register_device(&cdata->ts_input);
 
-	cdata->x = 0;
-	cdata->y = 0;
-	cdata->ready = 0;
-	cdata->press = 0;
-
-	 init_waitqueue_head(&cdata->wq);
-
-	filp->private_data = (void *)cdata;
+    cdata->x = 0;
+    cdata->y = 0;
+    cdata->ready = 0;
+    cdata->press = 0;
+    
+    init_waitqueue_head(&cdata->wq);
+    
+    filp->private_data = (void *)cdata;
+    
+    /* Request touch panel IRQ */
+    if (request_irq(IRQ_TC, cdata_ts_handler, 0, 
+    	"cdata-ts", (void *)cdata)) {
+        printk(KERN_ALERT "cdata: request irq failed.\n");
+        return -1;
+    }
 
 	return 0;
 }
