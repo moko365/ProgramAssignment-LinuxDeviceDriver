@@ -30,7 +30,7 @@ int main()
 		exit(0);
 	}
 
-    read(fd, &event, sizeof(struct input_event)*8);
+    read(fd, &event, sizeof(struct input_event)*2);
 
     /**
      * Input event codes:

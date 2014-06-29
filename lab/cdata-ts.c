@@ -21,6 +21,7 @@ DECLARE_TASKLET(my_tasklet, cdata_bh, NULL);
 struct cdata_ts {
 	struct input_dev ts_input;
 	wait_queue_head_t wq;
+	spin_lock_t	spinlock;
 
 	int x;
 	int y;
@@ -65,12 +66,12 @@ void cdata_bh(unsigned long priv)
 	struct input_dev *dev = &cdata->ts_input;
 	int x, y, press;
 
-	spin_lock_irq();
+	spin_lock_irqsave(&cdata->spinlock);
 
 	x = cdata->x;
 	y = cdata->y;
 	
-	spin_unlock_irq();
+	spin_unlock_irqsave(&cdata->spinlock);
 
 	press = !cdata->press;
 
@@ -126,6 +127,8 @@ static int cdata_ts_open(struct inode *inode, struct file *filp)
     cdata->press = 0;
     
     init_waitqueue_head(&cdata->wq);
+
+    spin_lock_init(&cdata->spinlock);
     
     filp->private_data = (void *)cdata;
     

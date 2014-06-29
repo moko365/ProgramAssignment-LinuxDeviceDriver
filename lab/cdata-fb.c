@@ -30,6 +30,8 @@ struct cdata_t {
 	struct timer_list	timer;
 };
 
+static DEFINE_MUTEX(mutex);
+
 static int cdata_open(struct inode *inode, struct file *filp)
 {
 	struct cdata_t *cdata;
@@ -72,12 +74,18 @@ static ssize_t cdata_write(struct file *filp, const char *user,
 				size_t size, loff_t *off)
 {
 	struct cdata_t *cdata = (struct cdata_t *)filp->private_data;
-	unsigned int count = cdata->count;
-	unsigned char *buf = &cdata->buf;
-	struct timer_list *timer = &cdata->timer;
+	unsigned int count; 
+	unsigned char *buf;
+	struct timer_list *timer;
 	DECLARE_WAITQUEUE(wait, current);
 
 	int i;
+
+	mutex_lock(&mutex);
+
+	count = cdata->count;
+	buf = &cdata->buf;
+	timer = &cdata->timer
 
 	for (i = 0; i < size; i++) {
 		copy_from_user(&buf[count], &user[i], 1);
@@ -102,6 +110,8 @@ static ssize_t cdata_write(struct file *filp, const char *user,
 	}
 
 	cdata->count = count;
+
+	mutex_unlock(&mutex);
 
 	return 0;
 }
