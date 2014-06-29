@@ -385,17 +385,10 @@ static SENSOR_DEVICE_ATTR_2(temp1_input, S_IRUGO, show_temp, NULL, 0, 0);
 static SENSOR_DEVICE_ATTR_2(humidity1_input, S_IRUGO, show_humidity, NULL, 0, 0);
 static DEVICE_ATTR(name, S_IRUGO, show_name, NULL);
 
-static int __devinit omap34xx_sht7x_probe(void)
+static int __devinit omap34xx_sht7x_probe(struct platform_device *pdev)
 {
 	int err;
 	struct sht7x_data *data;
-
-	err = platform_device_register(&omap34xx_sht7x_device);
-	if (err) {
-		printk(KERN_ERR
-			"Unable to register omap34xx SHT7x humidity and temperature sensor\n");
-		goto exit;
-	}
 
 	data = kzalloc(sizeof(struct sht7x_data), GFP_KERNEL);
 	if (!data) {
@@ -432,7 +425,7 @@ static int __devinit omap34xx_sht7x_probe(void)
 		goto exit_remove_all;
 	}
 
-        printk(KERN_INFO "omap34xx_sht7x: driver registered\n");
+        printk(KERN_INFO "omap34xx_sht7x: initialized.\n");
 
 	return 0;
 
@@ -447,21 +440,16 @@ exit_remove:
 			   &sensor_dev_attr_temp1_input.dev_attr);
 exit_free:
 	kfree(data);
-exit_platform:
-	platform_device_unregister(&omap34xx_sht7x_device);
 exit:
+exit_platform:
 	return err;
 }
 
-static int __init omap34xx_sht7x_init(void)
+static int __devexit omap34xx_sht7x_remove(struct platform_device *pdev)
 {
-	return omap34xx_sht7x_probe();
-}
-
-static void __exit omap34xx_sht7x_exit(void)
-{
-	struct sht7x_data *data =
-			dev_get_drvdata(&omap34xx_sht7x_device.dev);
+	struct sht7x_data *data;
+	
+	data = dev_get_drvdata(&omap34xx_sht7x_device.dev);
 
 	hwmon_device_unregister(data->hwmon_dev);
 	device_remove_file(&omap34xx_sht7x_device.dev, &dev_attr_name);
@@ -470,6 +458,37 @@ static void __exit omap34xx_sht7x_exit(void)
 	device_remove_file(&omap34xx_sht7x_device.dev,
 			   &sensor_dev_attr_temp1_input.dev_attr);
 	kfree(data);
+}
+
+static struct platform_driver omap34xx_sht7x_driver = {
+	.probe		= omap34xx_sht7x_probe,
+	.remove		= omap34xx_sht7x_remove, //  __devexit_p()
+	.driver		= {
+		.name	= "omap34xx_sht7x",
+		.owner	= THIS_MODULE,
+	},
+};
+
+static int __init omap34xx_sht7x_init(void)
+{
+	int err;
+
+	err = platform_device_register(&omap34xx_sht7x_device);
+	if (err) {
+		printk(KERN_ERR
+			"Unable to register omap34xx SHT7x humidity and temperature sensor\n");
+		goto exit_platform;
+	}
+
+	return platform_driver_register(&omap34xx_sht7x_driver);
+
+exit_platform:
+	return err;
+}
+
+static void __exit omap34xx_sht7x_exit(void)
+{
+	platform_driver_unregister(&omap34xx_sht7x_driver);
 	platform_device_unregister(&omap34xx_sht7x_device);
 }
 
