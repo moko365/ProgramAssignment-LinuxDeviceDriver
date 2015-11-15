@@ -1,0 +1,1 @@
+cmd_/home/ubuntu/ldd-training/lab_20151115/cdata_plat_dev.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.13.0-44-generic/scripts/module-common.lds --build-id  -o /home/ubuntu/ldd-training/lab_20151115/cdata_plat_dev.ko /home/ubuntu/ldd-training/lab_20151115/cdata_plat_dev.o /home/ubuntu/ldd-training/lab_20151115/cdata_plat_dev.mod.o

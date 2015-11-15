@@ -22,6 +22,7 @@
 #include <linux/slab.h>
 #include <linux/workqueue.h>
 #include <linux/atomic.h>
+#include <linux/platform_device.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include "cdata_ioctl.h"
@@ -139,13 +140,33 @@ static struct miscdevice cdata_misc = {
 	fops:	&cdata_fops,
 };
 
-int my_init_module(void)
+static int ldt_plat_probe(struct platform_device *pdev)
 {
     if (misc_register(&cdata_misc) < 0) {
         printk(KERN_INFO "CDATA: can't register driver\n");
         return -1;
     }
+}
 
+static int ldt_plat_remove(struct platform_device *pdev)
+{
+    misc_deregister(&cdata_misc);
+    return 0;
+}
+
+static struct platform_driver ldt_plat_driver = {
+	.driver = {
+		   .name	= "cdata_dummy",
+		   .owner	= THIS_MODULE
+		   },
+	.probe = ldt_plat_probe,
+	.remove = ldt_plat_remove,
+
+};
+
+int my_init_module(void)
+{
+    platform_driver_register(&ldt_plat_driver);
     printk(KERN_ALERT "cdata module: registered.\n");
 
     return 0;
@@ -153,7 +174,7 @@ int my_init_module(void)
 
 void my_cleanup_module(void)
 {
-    misc_deregister(&cdata_misc);
+    platform_driver_unregister(&ldt_plat_driver);
     printk(KERN_ALERT "cdata module: deregistered.\n");
 }
 
