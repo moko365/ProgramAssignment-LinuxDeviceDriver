@@ -28,6 +28,7 @@
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/delay.h>
+#include <linux/slab.h>
 
 struct sht7x_data {
 	struct device 		*hwmon_dev;	// Linux hardware minotoring
@@ -48,42 +49,55 @@ static struct platform_device omap34xx_sht7x_device = {
 
 /*********************** internal ******************************/
 
-static  void set_gpio_184_output()
+void set_gpio_184_output(void);
+void set_gpio_185_output(void);
+void set_gpio_184_input(void);
+void set_gpio_185_input(void);
+
+void set_gpio_184_output(void)
 {
 }
 
-static  void set_gpio_185_output()
+void set_gpio_185_output(void)
 {
 }
 
-static  void set_gpio_184_input()
+void set_gpio_184_input(void)
 {
 }
 
-static  void set_gpio_185_input()
+void set_gpio_185_input(void)
 {
 }
+
+static void gpio_184_high(void);
+static void gpio_185_high(void);
+static void gpio_184_low(void);
+static void gpio_185_low(void);
 
 /* GPIO High/Low */
-static  void gpio_184_high()
+static void gpio_184_high(void)
 {
 }
 
-static  void gpio_185_high()
+static  void gpio_185_high(void)
 {
 }
 
-static  void gpio_184_low()
+static  void gpio_184_low(void)
 {
 }
 
-static  void gpio_185_low()
+static  void gpio_185_low(void)
 {
 }
 
 /* GPIO 185 Data In */
-static  u32 gpio_185_read()
+static u32 gpio_185_read(void);
+
+static u32 gpio_185_read()
 {
+	return 0;
 }
 
 
@@ -136,6 +150,8 @@ static void shtxx_Initial(void)
    }
 }
 
+static void shtxx_start_transmission(void);
+
 static void shtxx_start_transmission(void)
 {
        delay_sht();
@@ -163,13 +179,17 @@ static void shtxx_start_transmission(void)
 #endif
 }
 
-void sht_sync()
+void sht_sync(void);
+
+void sht_sync(void)
 {
     //spin_lock();
     //omap34xx_sht7x->sync = 1;
     //spin_unlock();
     //wake_up();
 }
+
+u8 shtxx_write_byte(unsigned char output);
 
 u8 shtxx_write_byte(unsigned char output)
 {
@@ -272,17 +292,6 @@ static void shtxx_read_TH(struct sht7x_data *pResTH)
    /* 1. Measure Temperature */
    shtxx_start_transmission();                     //Start Transmission
 
-repeat:
-   //spin_unlock();
-   //prepare_to_wait();
-   //sleep_interruptible();
-   //spin_lock();
-
-   //if (!pResTh->sync)
-   //    goto repeat;
-
-   //spin_unlock();
-
    resT = shtxx_write_byte(SHT_MEASURE_TEMP);      //Write commmand
    if(resT == true){
        pResTH->valueT = shtxx_read_word();         //Read Temperature
@@ -315,8 +324,6 @@ repeat:
 
 static void sht7x_update(struct sht7x_data *sht7x)
 {
-	u32 temp_sensor_reg;
-
 	mutex_lock(&sht7x->lock);
 
 	if (time_after(jiffies, sht7x->last_updated + HZ / 2) || !sht7x->valid) {
@@ -385,7 +392,9 @@ static SENSOR_DEVICE_ATTR_2(temp1_input, S_IRUGO, show_temp, NULL, 0, 0);
 static SENSOR_DEVICE_ATTR_2(humidity1_input, S_IRUGO, show_humidity, NULL, 0, 0);
 static DEVICE_ATTR(name, S_IRUGO, show_name, NULL);
 
-static int __devinit omap34xx_sht7x_probe(struct platform_device *pdev)
+static int omap34xx_sht7x_probe(struct platform_device *pdev);
+
+static int omap34xx_sht7x_probe(struct platform_device *pdev)
 {
 	int err;
 	struct sht7x_data *data;
@@ -440,12 +449,13 @@ exit_remove:
 			   &sensor_dev_attr_temp1_input.dev_attr);
 exit_free:
 	kfree(data);
-exit:
 exit_platform:
 	return err;
 }
 
-static int __devexit omap34xx_sht7x_remove(struct platform_device *pdev)
+static int omap34xx_sht7x_remove(struct platform_device *pdev);
+
+static int omap34xx_sht7x_remove(struct platform_device *pdev)
 {
 	struct sht7x_data *data;
 	
@@ -458,6 +468,8 @@ static int __devexit omap34xx_sht7x_remove(struct platform_device *pdev)
 	device_remove_file(&omap34xx_sht7x_device.dev,
 			   &sensor_dev_attr_temp1_input.dev_attr);
 	kfree(data);
+
+	return 0;
 }
 
 static struct platform_driver omap34xx_sht7x_driver = {
