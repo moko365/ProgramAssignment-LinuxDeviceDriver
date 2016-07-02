@@ -13,6 +13,7 @@
 #include <linux/miscdevice.h>
 #include <linux/input.h>
 #include <linux/uaccess.h>
+#include <linux/slab.h>
 #include "cdata_dev_class.h"
 
 /* private data structure */
@@ -47,7 +48,7 @@ static struct file_operations cdata_dev_fops = {
 	owner:		THIS_MODULE,
 	open:		cdata_dev_open,
 	release:	cdata_dev_close,
-	ioctl:		cdata_dev_ioctl,
+	unlocked_ioctl:		cdata_dev_ioctl,
 };
 
 /******************************************************/
