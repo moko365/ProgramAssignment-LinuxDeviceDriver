@@ -1,13 +1,15 @@
-#
-# Author: jollen
-# 
-obj-m :=  omap34xx_sht7x.o
+obj-m := cdata.o
 
-KDIR := /lib/modules/2.6.24-26-generic/build
+#
+# See: http://stackoverflow.com/questions/24975377/kvm-module-verification-failed-signature-and-or-required-key-missing-taintin
+#
+CONFIG_MODULE_SIG=n
+
+KDIR := /usr/src/linux-headers-3.13.0-74-generic 
 PWD := $(shell pwd)
 
 default:
 	$(MAKE) -C $(KDIR) SUBDIRS=$(PWD) modules
 
 clean:
-	rm -rf *.o *.ko .*cmd modules.* Module.* .tmp_versions *.mod.c
+	rm -rf *.o *.ko .*cmd modules.* Module.* .tmp_versions *.mod.c test
