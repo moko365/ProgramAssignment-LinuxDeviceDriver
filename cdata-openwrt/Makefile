@@ -17,7 +17,6 @@ define KernelPackage/cdata
   SUBMENU:=Other modules
   TITLE:=Linux device driver training
   FILES:=$(PKG_BUILD_DIR)/cdata.ko
-  AUTOLOAD:=$(call AutoLoad,30,cdata,1)
   KCONFIG:=
 endef
 
