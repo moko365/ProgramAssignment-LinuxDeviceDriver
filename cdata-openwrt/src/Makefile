@@ -1,1 +1,1 @@
-obj-m += cdata.o
+obj-m += cdata.o leds-gpio.o
