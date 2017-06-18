@@ -385,12 +385,23 @@ static ssize_t show_humidity(struct device *dev,
 
 	sht7x_update(data);
 
-	return sprintf(buf, "%d\n", data->humidity);
+	//return sprintf(buf, "%d\n", data->humidity);
+	return sprintf(buf, "100\n");
 }
 
 static SENSOR_DEVICE_ATTR_2(temp1_input, S_IRUGO, show_temp, NULL, 0, 0);
 static SENSOR_DEVICE_ATTR_2(humidity1_input, S_IRUGO, show_humidity, NULL, 0, 0);
 static DEVICE_ATTR(name, S_IRUGO, show_name, NULL);
+
+static struct attribute *sht7x_attributes[] = {
+	&sensor_dev_attr_temp1_input.dev_attr,
+	&sensor_dev_attr_humidity1_input.dev_attr,
+	NULL
+};
+
+static const struct attribute_group sht7x_attr_group = {
+	.attrs = sht7x_attributes,
+};
 
 static int omap34xx_sht7x_probe(struct platform_device *pdev);
 
@@ -413,19 +424,15 @@ static int omap34xx_sht7x_probe(struct platform_device *pdev)
 	mutex_init(&data->lock);
 	data->name = "omap34xx_sht7x";
 
-	err = device_create_file(&omap34xx_sht7x_device.dev,
-				 &sensor_dev_attr_temp1_input.dev_attr);
-	if (err)
+	err = sysfs_create_group(&omap34xx_sht7x_device.dev.kobj, &sht7x_attr_group);
+	if (err) {
+		printk(KERN_ALERT "could not create sysfs files\n");
 		goto exit_free;
-
-	err = device_create_file(&omap34xx_sht7x_device.dev,
-				 &sensor_dev_attr_humidity1_input.dev_attr);
-	if (err)
-		goto exit_remove;
+	}
 
 	err = device_create_file(&omap34xx_sht7x_device.dev, &dev_attr_name);
 	if (err)
-		goto exit_remove_humidity;
+		goto exit_remove_all;
 
 	data->hwmon_dev = hwmon_device_register(&omap34xx_sht7x_device.dev);
 
@@ -441,12 +448,6 @@ static int omap34xx_sht7x_probe(struct platform_device *pdev)
 exit_remove_all:
 	device_remove_file(&omap34xx_sht7x_device.dev,
 			   &dev_attr_name);
-exit_remove_humidity:
-	device_remove_file(&omap34xx_sht7x_device.dev,
-			   &sensor_dev_attr_humidity1_input.dev_attr);
-exit_remove:
-	device_remove_file(&omap34xx_sht7x_device.dev,
-			   &sensor_dev_attr_temp1_input.dev_attr);
 exit_free:
 	kfree(data);
 exit_platform:
@@ -462,11 +463,8 @@ static int omap34xx_sht7x_remove(struct platform_device *pdev)
 	data = dev_get_drvdata(&omap34xx_sht7x_device.dev);
 
 	hwmon_device_unregister(data->hwmon_dev);
-	device_remove_file(&omap34xx_sht7x_device.dev, &dev_attr_name);
-	device_remove_file(&omap34xx_sht7x_device.dev,
-			   &sensor_dev_attr_humidity1_input.dev_attr);
-	device_remove_file(&omap34xx_sht7x_device.dev,
-			   &sensor_dev_attr_temp1_input.dev_attr);
+	sysfs_remove_group(&omap34xx_sht7x_device.dev.kobj, &sht7x_attr_group);
+	
 	kfree(data);
 
 	return 0;
