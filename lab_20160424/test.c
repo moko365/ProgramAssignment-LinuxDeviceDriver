@@ -13,7 +13,6 @@ int main(void)
     //child = fork();
 
     fd = open("/dev/cdata", O_RDWR);
-    for (i = 0; i < 100; i++)
-        write(fd, "hello", 5);
+    ioctl(fd, IOCTL_EMPTY, 0);
     close(fd);
 }

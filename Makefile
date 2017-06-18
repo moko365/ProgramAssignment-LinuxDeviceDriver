@@ -1,4 +1,4 @@
-obj-m := cdata.o
+obj-m := cdata_dev_class.o omap34xx_sht7x.o
 
 #
 # See: http://stackoverflow.com/questions/24975377/kvm-module-verification-failed-signature-and-or-required-key-missing-taintin
