@@ -103,13 +103,16 @@ void cdata_bh(unsigned long priv)
 	struct cdata_ts *cdata = (struct cdata_ts *)priv;
 	struct input_dev *dev = &cdata->ts_input;
 	spinlock_t lock;
+	int x, y;
+	unsigned long flags;
 
-	spin_lock_irq(&lock);
+	spin_lock_irqsave(&lock, flags);
+	x = cdata->x;
+	y = cdata->y;
+	spin_unlock_irqsave(&lock, flags);
 
 	input_report_abs(dev, ABS_X, x);
 	input_report_abs(dev, ABS_Y, y);
-
-	spin_unlock_irq(&lock);
 }
 
 static void s3c2410_isr_adc(int irq, void *dev_id, struct pt_regs *reg) 
