@@ -22,7 +22,8 @@
 
 #include "cdata_ioctl.h"
 
-#undef	__ENABLE_REENTRANT__
+//#undef	__ENABLE_REENTRANT__ 
+#define	__ENABLE_REENTRANT__  1
 
 #define CDATA_MAJOR 121
 #define	BUF_SIZE 16
@@ -72,7 +73,7 @@ static int cdata_close(struct inode *inode, struct file *filp)
 	idx = cdata->idx;
 
 	for (i = 0; i < idx; i++) {
-		printk(KERN_ALERT "buf[%d]: %c\n", i, cdata->buf[i]);
+		//printk(KERN_ALERT "buf[%d]: %c\n", i, cdata->buf[i]);
 	}
 
 	del_timer(&cdata->timer);
@@ -93,7 +94,7 @@ void write_framebuffer_with_work(struct work_struct *work)
 	struct cdata_t *cdata = container_of(work, struct cdata_t, work);
 	cdata->idx = 0;
 
-	printk(KERN_ALERT "cdata: wake up current process\n");
+	printk(KERN_ALERT "cdata: [work queue] wake up current process\n");
 	wake_up_interruptible(&cdata->writeable);
 }
 
@@ -125,8 +126,11 @@ static ssize_t cdata_write(struct file *filp, const char __user *user,
 	for (i = 0; i < size; i++) {
 		while (idx > (BUF_SIZE - 1)) {
 			printk(KERN_ALERT "cdata: no space in the buffer\n");
+			//DEFINE_WAIT(wait);
 
-			prepare_to_wait(&cdata->writeable, &wait, TASK_INTERRUPTIBLE);
+			//prepare_to_wait(&cdata->writeable, &wait, TASK_INTERRUPTIBLE);
+			add_wait_queue(&cdata->writeable, &wait);
+			set_current_state(TASK_INTERRUPTIBLE);
 
 #if 0
 			timer->expires = jiffies + 1*HZ;
@@ -136,6 +140,13 @@ static ssize_t cdata_write(struct file *filp, const char __user *user,
 #else
 			schedule_work(&cdata->work);
 #endif
+			if (signal_pending(current)) {
+#ifdef __ENABLE_REENTRANT__
+				mutex_unlock(&cdata->write_lock);
+#endif
+				return -ERESTARTSYS;
+			}
+
 			schedule();
 
 			finish_wait(&cdata->writeable, &wait);
@@ -149,6 +160,9 @@ static ssize_t cdata_write(struct file *filp, const char __user *user,
 
 	cdata->idx = idx;
 
+#ifdef __ENABLE_REENTRANT__
+	mutex_unlock(&cdata->write_lock);
+#endif
 	return 0;
 }
 
@@ -196,7 +210,9 @@ static long cdata_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 
 exit:
 	cdata->idx = idx;
+#ifdef __ENABLE_REENTRANT__
 	mutex_unlock(&ioctl_lock);
+#endif
 	return ret;
 }
 

@@ -6,25 +6,28 @@
 int main(void)
 {
     int fd;
+    int i;
     pid_t child;
 
-    child = fork();
     fd = open("/dev/cdata-misc", O_RDWR);
+    child = fork();
 
     if (child != 0) {
-        write(fd, "h", 1);
-        write(fd, "e", 1);
-	ioctl(fd, IOCTL_SYNC, 0);
-        write(fd, "l", 1);
-        write(fd, "l", 1);
-        write(fd, "o", 1);
-	ioctl(fd, IOCTL_SYNC, 0);
+	while (1) {
+           write(fd, "h", 1);
+           write(fd, "e", 1);
+           write(fd, "l", 1);
+           write(fd, "l", 1);
+           write(fd, "o", 1);
+	}
     } else {
+	while (1) {
         write(fd, "12345", 5);
         write(fd, "12345", 5);
         write(fd, "12345", 5);
         write(fd, "12345", 5);
         write(fd, "12345", 5);
+	}
     }
 
     close(fd);
