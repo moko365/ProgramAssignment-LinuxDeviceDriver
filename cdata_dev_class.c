@@ -14,6 +14,7 @@
 #include <linux/input.h>
 #include <linux/uaccess.h>
 #include <linux/slab.h>
+#include <linux/device.h>
 #include "cdata_dev_class.h"
 
 /* private data structure */
@@ -38,17 +39,10 @@ static int cdata_dev_close(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static int cdata_dev_ioctl(struct inode *inode, struct file *filp, 
-				unsigned int cmd, unsigned long arg)
-{
-	return 0;
-}
-
 static struct file_operations cdata_dev_fops = {
 	owner:		THIS_MODULE,
 	open:		cdata_dev_open,
 	release:	cdata_dev_close,
-	unlocked_ioctl:		cdata_dev_ioctl,
 };
 
 /******************************************************/
@@ -113,13 +107,13 @@ int cdata_device_unregister(struct cdata_dev *ops)
 
 /***************************** sysfs ****************************/
 
-static ssize_t cdata_show_version(struct class *cls, char *buf)
+static ssize_t cdata_show_version(struct class *cls, struct class_attribute *attr, char *buf)
 {
 	return sprintf(buf, "CDATA CLASS V1.0\n");
 }
 
-static ssize_t cdata_handle_connect(struct class *cls, const char *buf,
-					size_t count)
+static ssize_t cdata_handle_connect(struct class *cls, struct class_attribute *attr, 
+            				const char *buf, size_t count)
 {
 	struct cdata_dev_data *data;
 	struct cdata_dev *ops;
@@ -167,6 +161,8 @@ static int __init cdata_dev_init(void)
 	cdata_class = class_create(THIS_MODULE, "cdata_android");
 
 	class_create_file(cdata_class, &class_attr_cdata);
+
+	return 0;
 }
 
 static void __exit cdata_dev_exit(void)
