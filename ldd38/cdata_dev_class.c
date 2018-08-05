@@ -107,12 +107,12 @@ int cdata_device_unregister(struct cdata_dev *ops)
 
 /***************************** sysfs ****************************/
 
-static ssize_t cdata_show_version(struct class *cls, struct class_attribute *attr, char *buf)
+static ssize_t cdata_show(struct class *cls, struct class_attribute *attr, char *buf)
 {
 	return sprintf(buf, "CDATA CLASS V1.0\n");
 }
 
-static ssize_t cdata_handle_connect(struct class *cls, struct class_attribute *attr, 
+static ssize_t cdata_store(struct class *cls, struct class_attribute *attr, 
             				const char *buf, size_t count)
 {
 	struct cdata_dev_data *data;
@@ -152,7 +152,7 @@ static ssize_t cdata_handle_connect(struct class *cls, struct class_attribute *a
 	return 0;
 }
 
-static CLASS_ATTR(cdata, 0666, cdata_show_version, cdata_handle_connect);
+static CLASS_ATTR_RW(cdata);
 
 static struct class *cdata_class;
 
