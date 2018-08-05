@@ -394,8 +394,8 @@ static SENSOR_DEVICE_ATTR_2(humidity1_input, S_IRUGO, show_humidity, NULL, 0, 0)
 static DEVICE_ATTR(name, S_IRUGO, show_name, NULL);
 
 static struct attribute *sht7x_attributes[] = {
-	&sensor_dev_attr_temp1_input.dev_attr,
-	&sensor_dev_attr_humidity1_input.dev_attr,
+	&sensor_dev_attr_temp1_input.dev_attr.attr,
+	&sensor_dev_attr_humidity1_input.dev_attr.attr,
 	NULL
 };
 

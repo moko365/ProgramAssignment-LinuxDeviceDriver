@@ -82,7 +82,7 @@ static int cdata_close(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-static ssize_t cdata_read(struct file *filp, const char __user *user, 
+static ssize_t cdata_read(struct file *filp, char __user *user, 
 	size_t size, loff_t *off)
 {
 	printk(KERN_ALERT "cdata in read\n");

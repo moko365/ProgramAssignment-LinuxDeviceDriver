@@ -1,7 +1,8 @@
-obj-m := cdata.o cdata_plat_dev.o cdata_dev_class.o
+obj-m := cdata.o cdata_plat_dev.o cdata_dev_class.o omap34xx_sht7x.o
 
 CONFIG_MODULE_SIG=n
-KDIR := /usr/src/linux-headers-3.13.0-74-generic
+#KDIR := /usr/src/linux-headers-4.4.0-1062-aws
+KDIR := /usr/src/linux-headers-4.8.0-58-generic
 PWD := $(shell pwd)
 
 default:
