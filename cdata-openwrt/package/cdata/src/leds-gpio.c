@@ -70,7 +70,9 @@ static void gpio_led_set(struct led_classdev *led_cdev,
 	if (led_dat->can_sleep) {
 		led_dat->new_level = level;
 		schedule_work(&led_dat->work);
+		printk(KERN_ALERT "leds-gpio: in process context\n");
 	} else {
+		printk(KERN_ALERT "leds-gpio: in interrupt context\n");
 		if (led_dat->blinking) {
 			led_dat->platform_gpio_blink_set(led_dat->gpio, level,
 							 NULL, NULL);

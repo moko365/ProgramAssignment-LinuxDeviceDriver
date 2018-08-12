@@ -16,7 +16,7 @@ include $(INCLUDE_DIR)/package.mk
 define KernelPackage/cdata
   SUBMENU:=Other modules
   TITLE:=Linux device driver training
-  FILES:=$(PKG_BUILD_DIR)/cdata.ko $(PKG_BUILD_DIR)/leds-gpio.ko
+  FILES:=$(PKG_BUILD_DIR)/cdata.ko $(PKG_BUILD_DIR)/leds-gpio.ko $(PKG_BUILD_DIR)/cdata_plat_dev.ko
   KCONFIG:=
 endef
 
